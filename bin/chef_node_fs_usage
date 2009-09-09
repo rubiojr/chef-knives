@@ -1,12 +1,4 @@
 #!/usr/bin/env ruby
-#
-# List Filesystem Usage for every chef node that matches the hostname
-# provided. If no argument is provided, matches all the nodes.
-#
-# Example:
-# chef_node_fs_usage '*.cdn.example.com'
-# (matches every node whose fqdn ends with cdn.example.com)
-#
 require 'rubygems'
 require 'couchrest'
 require 'chef'
