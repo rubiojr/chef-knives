@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+#
+# List Filesystem Usage for every chef node that matches the hostname
+# provided. If no argument is provided, matches all the nodes.
+#
+# Example:
+# chef_node_fs_usage '*.cdn.example.com'
+# (matches every node whose fqdn ends with cdn.example.com)
+#
+require 'rubygems'
+require 'couchrest'
+require 'chef'
+require 'choice'
+require 'pp'
+
+CHEF_DB_URL = 'http://localhost:5984/chef'
+
+def humanize_bytes(bytes)
+  m = bytes.to_i
+  units = %w[Bits Bytes MB GB TB PB]
+  while (m/1024.0) >= 1
+    m = m/1024.0
+    units.shift
+  end
+  return m.round.to_s + " #{units[0]}"
+end
+
+def main
+  Choice.options do
+    header ''
+    header 'Available options:'
+
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
+      end
+    end
+
+    option :swap_usage_threshold do
+      long '--swap-usage-threshold'
+      short '-s'
+      desc 'Print only the hosts with swap usage percent greater than this value'
+    end
+
+    option :mem_usage_threshold do
+      long '--mem-usage-threshold'
+      short '-u'
+      desc 'Print only the hosts with memory usage percent greater than this value'
+    end
+
+    option :match do 
+      default '.*'
+      long '--match'
+      short '-m'
+      desc 'Match only the nodes with an FQDN matching this value'
+    end
+  end
+
+  db = CouchRest.database(CHEF_DB_URL)
+
+  db.documents['rows'].each do |doc|
+    if doc['id'] =~ /node_/
+      node = db.get(doc['id'])
+      next if  node.fqdn !~ /#{Choice.choices[:match]}/
+      puts node.fqdn
+      free_mem = node.memory.free.strip.gsub("kB",'').to_i
+      total_mem = node.memory.total.strip.gsub("kB",'').to_i
+      used_mem = total_mem - free_mem
+      free_mem_per = (free_mem * 100 / total_mem)
+      used_mem_per = 100 - (free_mem * 100 / total_mem)
+
+      puts "    Mem Free:".ljust(20) + "#{humanize_bytes(free_mem * 1024)} (#{free_mem_per}%)"
+      puts "    Mem Used:".ljust(20) + "#{humanize_bytes(used_mem * 1024)} (#{used_mem_per}%)"
+      puts "    Mem Total:".ljust(20) + "#{humanize_bytes(total_mem * 1024)}"
+
+      free_swap = node.memory.swap.free.strip.gsub("kB",'').to_i
+      total_swap = node.memory.swap.total.strip.gsub("kB",'').to_i
+      used_swap = total_swap - free_swap
+      free_swap_per = (free_swap * 100 / total_swap)
+      used_swap_per = 100 - (free_swap * 100 / total_swap)
+      puts "    Swap Free:".ljust(20) + "#{humanize_bytes(free_swap * 1024)} (#{free_swap_per}%)"
+      puts "    Swap Used:".ljust(20) + "#{humanize_bytes(used_swap * 1024)} (#{used_swap_per}%)"
+      puts "    Swap Total:".ljust(20) + "#{humanize_bytes(total_swap * 1024)}"
+      
+    end
+  end
+
+end
+
+main
