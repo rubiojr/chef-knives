@@ -10,26 +10,68 @@
 require 'rubygems'
 require 'couchrest'
 require 'chef'
+require 'choice'
 require 'pp'
 
 CHEF_DB_URL = 'http://localhost:5984/chef'
 
-db = CouchRest.database(CHEF_DB_URL)
-fqdn = ARGV[0]
-fqdn = '.*' if fqdn.nil?
+def main
+  Choice.options do
+    header ''
+    header 'Available options:'
 
-db.documents['rows'].each do |doc|
-  if doc['id'] =~ /node_/
-    node = db.get(doc['id'])
-    next if  node.fqdn !~ /#{fqdn}/
-    puts node.fqdn
-    node.filesystem.each do |fsname,fsattrs|
-      if not (%w[proc binfmt_misc sysfs tmpfs devpts rpc_pipefs].include? fsattrs['fs_type'])
-        print "    #{fsname}".ljust(50)
-        puts fsattrs['percent_used']
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
       end
     end
-    puts
+
+    option :usage_threshold do
+      long '--usage-threshold'
+      short '-t'
+      desc 'Print only the filesystems with usage percent greater than this value'
+    end
+
+    option :match do 
+      default '.*'
+      long '--match'
+      short '-m'
+      desc 'Match only the nodes with an FQDN matching this value'
+    end
   end
+
+  db = CouchRest.database(CHEF_DB_URL)
+
+  db.documents['rows'].each do |doc|
+    if doc['id'] =~ /node_/
+      node = db.get(doc['id'])
+      next if  node.fqdn !~ /#{Choice.choices[:match]}/
+      matching_fs = []
+      node.filesystem.each do |fsname,fsattrs|
+        if not (%w[proc binfmt_misc sysfs tmpfs devpts rpc_pipefs].include? fsattrs['fs_type'])
+          if Choice.choices[:usage_threshold]
+            uthres = Choice.choices[:usage_threshold].to_i
+            usage = fsattrs['percent_used'].chomp.strip.gsub('%','').to_i
+            (matching_fs << "    #{fsname}".ljust(50) + fsattrs['percent_used']) if usage > uthres
+          else
+            matching_fs << "    #{fsname}".ljust(50) + fsattrs['percent_used']
+          end
+        end
+      end
+      if not matching_fs.empty?
+        puts node.fqdn
+        matching_fs.each do |fs|
+          puts fs
+        end
+        puts
+      end
+    end
+  end
+
 end
 
+main
