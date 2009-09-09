@@ -1,0 +1,9 @@
+REQUIREMENTS
+
+rubygems
+
+gems
+-----
+chef
+json 
+couchrest
