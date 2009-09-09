@@ -16,6 +16,7 @@ require 'pp'
 CHEF_DB_URL = 'http://localhost:5984/chef'
 
 def humanize_bytes(bytes)
+  return "0 Bytes" if bytes == 0
   m = bytes.to_i
   units = %w[Bits Bytes MB GB TB PB]
   while (m/1024.0) >= 1
@@ -80,8 +81,14 @@ def main
       free_swap = node.memory.swap.free.strip.gsub("kB",'').to_i
       total_swap = node.memory.swap.total.strip.gsub("kB",'').to_i
       used_swap = total_swap - free_swap
-      free_swap_per = (free_swap * 100 / total_swap)
-      used_swap_per = 100 - (free_swap * 100 / total_swap)
+      # The host may not have swap!
+      if total_swap == 0
+        used_swap_per = 100
+        free_swap_per = 0
+      else
+        used_swap_per = 100 - (free_swap * 100 / total_swap)
+        free_swap_per = (free_swap * 100 / total_swap)
+      end
       puts "    Swap Free:".ljust(20) + "#{humanize_bytes(free_swap * 1024)} (#{free_swap_per}%)"
       puts "    Swap Used:".ljust(20) + "#{humanize_bytes(used_swap * 1024)} (#{used_swap_per}%)"
       puts "    Swap Total:".ljust(20) + "#{humanize_bytes(total_swap * 1024)}"

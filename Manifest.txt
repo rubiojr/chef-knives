@@ -1,0 +1,7 @@
+History.txt
+Manifest.txt
+README.txt
+Rakefile
+bin/chef_node_fs_usage
+bin/chef_node_mem_usage
+lib/chef/knives.rb
