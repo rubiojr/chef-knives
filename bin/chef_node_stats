@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'couchrest'
+require 'chef'
+require 'choice'
+require 'pp'
+
+CHEF_DB_URL = 'http://localhost:5984/chef'
+
+def main
+  Choice.options do
+    header ''
+    header 'Available options:'
+
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
+      end
+    end
+
+    option :match do 
+      default '.*'
+      long '--match'
+      short '-m'
+      desc 'Match only the nodes with an FQDN matching this value'
+    end
+  end
+
+  db = CouchRest.database(CHEF_DB_URL)
+
+  counter = 0
+  platforms = {}
+  vguests = 0
+  phynodes = 0
+  virt_hosts = 0
+  db.documents['rows'].each do |doc|
+    if doc['id'] =~ /node_/
+      node = db.get(doc['id'])
+      next if  node.fqdn !~ /#{Choice.choices[:match]}/
+      plat = node.platform+node.platform_version
+      platforms[plat] = 0 if platforms[plat].nil?
+      platforms[plat] += 1
+      if node.virtualization and node.virtualization['role'] == 'guest'
+        vguests += 1 
+      end
+      if node.virtualization['role'] == 'host'
+        virt_hosts += 1
+      end
+      if node.virtualization.empty?
+        phynodes += 1
+      end
+      counter += 1
+    end
+  end
+  puts "Chef Server Stats"
+  puts "------------------"
+  puts "Registered Nodes:".ljust(30) + counter.to_s
+  puts "    Virtual Nodes (Guests):".ljust(30) + vguests.to_s
+  puts "    Host Nodes:".ljust(30) + virt_hosts.to_s
+  puts "    Physical Nodes:".ljust(30) + phynodes.to_s
+  puts "Nodes by platform:"
+  platforms.each do |p,count|
+    puts "    #{p}: #{count}"
+  end
+
+end
+
+main
