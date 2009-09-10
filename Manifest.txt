@@ -4,4 +4,6 @@ README.txt
 Rakefile
 bin/chef_node_fs_usage
 bin/chef_node_mem_usage
+bin/chef_node_stats
+chef_knives.gemspec
 lib/chef/knives.rb

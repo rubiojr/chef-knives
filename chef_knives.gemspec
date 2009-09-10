@@ -1,15 +1,15 @@
 Gem::Specification.new do |s|
   s.name = %q{chef_knives}
-  s.version = "0.1"
+  s.version = "0.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Sergio Rubio"]
-  s.date = %q{2009-09-09}
+  s.date = %q{2009-09-10}
   s.description = %q{Unofficial Chef Server scripts and related stuff. http://wiki.opscode.com/display/chef}
   s.email = ["sergio@rubio.name"]
-  s.executables = ["chef_node_fs_usage", "chef_node_mem_usage"]
+  s.executables = ["chef_node_fs_usage", "chef_node_mem_usage", "chef_node_stats"]
   s.extra_rdoc_files = ["History.txt", "Manifest.txt", "README.txt"]
-  s.files = ["History.txt", "Manifest.txt", "README.txt", "Rakefile", "bin/chef_node_fs_usage", "bin/chef_node_mem_usage", "lib/chef/knives.rb"]
+  s.files = ["History.txt", "Manifest.txt", "README.txt", "Rakefile", "bin/chef_node_fs_usage", "bin/chef_node_mem_usage", "bin/chef_node_stats", "chef_knives.gemspec", "lib/chef/knives.rb"]
   s.homepage = %q{http://github.com/rubiojr/chef-knives}
   s.rdoc_options = ["--main", "README.txt"]
   s.require_paths = ["lib"]
