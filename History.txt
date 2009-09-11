@@ -1,12 +1,17 @@
-=== 0.3.2 / 2009-11-09
+=== 0.3.3 / 2009-11-11
+
+* fixes in chef_node_find
+* added --no-ifaces flag to chef_node_find
+
+=== 0.3.2 / 2009-11-11
 
 * fixes in chef_node_fs_usage
 
-=== 0.3.1 / 2009-11-09
+=== 0.3.1 / 2009-11-11
 
 * fixes in chef_node_fs_usage
 
-=== 0.3 / 2009-11-09
+=== 0.3 / 2009-11-10
 
 * chef_node_find script added
 
