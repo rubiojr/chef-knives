@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'couchrest'
+require 'chef'
+require 'choice'
+require 'pp'
+
+CHEF_DB_URL = 'http://localhost:5984/chef'
+
+def humanize_bytes(bytes)
+  return "0 Bytes" if bytes == 0
+  m = bytes.to_i
+  units = %w[Bits Bytes MB GB TB PB]
+  while (m/1024.0) >= 1
+    m = m/1024.0
+    units.shift
+  end
+  return m.round.to_s + " #{units[0]}"
+end
+
+def main
+  Choice.options do
+    header ''
+    header 'Available options:'
+
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
+      end
+    end
+
+    option :match do 
+      default '.*'
+      long '--match'
+      short '-m'
+      desc 'Match only the nodes with an FQDN matching this value'
+    end
+  end
+
+  db = CouchRest.database(CHEF_DB_URL)
+
+  db.documents['rows'].each do |doc|
+    if doc['id'] =~ /node_/
+      node = db.get(doc['id'])
+      next if  node.fqdn !~ /#{Choice.choices[:match]}/
+      plat = node.platform+node.platform_version
+      fqdn = node.fqdn
+      puts fqdn
+      puts "-------------"
+      puts "Platform: " + plat
+      puts "Uptime: " + node.uptime
+      puts "Memory Total: " + humanize_bytes(node.memory.total.gsub('kB','').to_i * 1024)
+      puts "Memory Free: " + humanize_bytes(node.memory.free.gsub('kB','').to_i * 1024)
+      puts "Network Interfaces: "
+      puts "Is a Virtual Machine?: #{(node.virtualization.role == 'guest') rescue false}"
+      node.network.interfaces.each_key do |iface|
+        next unless node.network.interfaces[iface][:addresses]
+        puts "  #{iface}"
+        node.network.interfaces[iface].addresses.each_key do |a|
+          print "    #{a}".ljust(30)
+          puts "    [#{node.network.interfaces[iface].addresses[a].family}]"
+        end
+      end
+      puts
+    end
+  end
+end
+
+main

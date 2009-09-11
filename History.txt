@@ -1,4 +1,8 @@
-=== 0.2 / 2009-09-09
+=== 0.3 / 2009-11-09
+
+* chef_node_find script added
+
+=== 0.2 / 2009-10-09
 
 * chef_node_stats script added
 
