@@ -44,10 +44,10 @@ def main
       next if  node.fqdn !~ /#{Choice.choices[:match]}/
       matching_fs = []
       node.filesystem.each do |fsname,fsattrs|
-        if not (%w[proc binfmt_misc sysfs tmpfs devpts usbfs rpc_pipefs].include? fsattrs['fs_type'])
+        if not (%w[proc configfs binfmt_misc none sysfs tmpfs devpts usbfs rpc_pipefs].include? fsattrs['fs_type'])
           if Choice.choices[:usage_threshold]
             uthres = Choice.choices[:usage_threshold].to_i
-            usage = fsattrs['percent_used'].chomp.strip.gsub('%','').to_i
+            usage = fsattrs['percent_used'].chomp.strip.gsub('%','').to_i rescue 100
             (matching_fs << "    #{fsname}".ljust(50) + fsattrs['percent_used']) if usage > uthres
           else
             matching_fs << "    #{fsname}".ljust(50) + (fsattrs['percent_used'] || '')
