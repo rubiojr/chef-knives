@@ -35,9 +35,14 @@ def main
 
     option :match do 
       default '.*'
-      long '--match'
+      long '--match=REGEXP'
       short '-m'
       desc 'Match only the nodes with an FQDN matching this value'
+    end
+
+    option :no_ifaces do 
+      long '--no-ifaces'
+      desc 'Do not print network interfaces'
     end
   end
 
@@ -55,14 +60,16 @@ def main
       puts "Uptime: " + node.uptime
       puts "Memory Total: " + humanize_bytes(node.memory.total.gsub('kB','').to_i * 1024)
       puts "Memory Free: " + humanize_bytes(node.memory.free.gsub('kB','').to_i * 1024)
-      puts "Network Interfaces: "
       puts "Is a Virtual Machine?: #{(node.virtualization.role == 'guest') rescue false}"
-      node.network.interfaces.each_key do |iface|
-        next unless node.network.interfaces[iface][:addresses]
-        puts "  #{iface}"
-        node.network.interfaces[iface].addresses.each_key do |a|
-          print "    #{a}".ljust(30)
-          puts "    [#{node.network.interfaces[iface].addresses[a].family}]"
+      if not Choice.choices[:no_ifaces]
+        puts "Network Interfaces: "
+        node.network.interfaces.each_key do |iface|
+          next unless node.network.interfaces[iface][:addresses]
+          puts "  #{iface}"
+          node.network.interfaces[iface].addresses.each_key do |a|
+            print "    #{a}".ljust(30)
+            puts "    [#{node.network.interfaces[iface].addresses[a].family}]"
+          end
         end
       end
       puts
