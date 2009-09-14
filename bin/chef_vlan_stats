@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'couchrest'
+require 'chef'
+require 'choice'
+require 'pp'
+require  'ip'
+
+CHEF_DB_URL = 'http://localhost:5984/chef'
+CONFIG_FILE = File.expand_path('~/.chef_knives')
+
+begin
+  CONFIG = YAML.load_file(CONFIG_FILE)
+rescue Exception => e
+  $stderr.puts "Error reading config file #{CONFIG_FILE}"
+  exit 1
+end
+
+def guess_vlan(addr)
+  if not CONFIG.has_key?('vlan_mapping')
+    $stderr.puts 'No vlan_mapping defined in config file'
+    exit 1
+  end
+  mapping = CONFIG['vlan_mapping']
+  mapping.each do |k, v|
+    cidr = IP::CIDR.new v
+    if cidr.includes? IP::Address::IPv4.parse(addr.strip.chomp)
+      return k
+    end
+  end
+  nil
+end
+
+def main
+  Choice.options do
+    header ''
+    header 'Available options:'
+
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
+      end
+    end
+
+  end
+
+  db = CouchRest.database(CHEF_DB_URL)
+
+  stats = {}
+  db.documents['rows'].each do |doc|
+    if doc['id'] =~ /node_/
+      node = db.get(doc['id'])
+      node.network.interfaces.each_key do |iface|
+        next if not node.network.interfaces[iface].keys.include? 'addresses'
+        node.network.interfaces[iface].addresses.each do |addr|
+          next if (addr[1]['family'] != 'inet') or (addr[0] == '127.0.0.1')
+          ip, mask = addr[0], addr[1]['netmask']
+          vlan = guess_vlan(ip) || 'none'
+          stats[vlan] = [] if stats[vlan].nil?
+          stats[vlan] << "#{ip}/#{mask}"
+        end
+      end
+    end
+  end
+  puts "Chef VLAN Stats"
+  puts "------------------"
+  puts "VLANs Registered: #{stats.keys.size}"
+  puts "VLAN Usage:"
+  stats.each do |k, v|
+    vlan_size = 0
+    cidr = IP::CIDR.new(v[0])
+    vlan_size = cidr.range.size
+    percent_used = (100 * (stats[k].size + 2))/vlan_size
+    puts "    VLAN #{k}:".ljust(15) + "#{stats[k].size} Assigned, #{vlan_size - 2 - stats[k].size} Free".ljust(25) + "(#{percent_used}% Used)"
+  end
+  puts "IPs from Unknown VLAN:"
+  stats['none'].each do |addr|
+    puts "    #{addr}"
+  end
+end
+
+main
