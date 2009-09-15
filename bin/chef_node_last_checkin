@@ -1,0 +1,71 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'couchrest'
+require 'chef'
+require 'choice'
+require 'pp'
+
+CHEF_DB_URL = 'http://localhost:5984/chef'
+
+def last_check_in_time(last_check_in)
+  status_msg = ''
+  hours, minutes, seconds, frac = DateTime.day_fraction_to_time(DateTime.now - last_check_in)
+  hours_text   = "#{hours} hour#{hours == 1 ? '' : 's'}"
+  minutes_text = "#{minutes} minute#{minutes == 1 ? '' : 's'}"
+  if hours > 48
+    status_msg = "> #{hours/24} days ago"
+  elsif hours > 0
+    status_msg = "> #{hours_text} ago"
+  elsif minutes < 1
+    status_msg = "< 1 minute ago"
+  else
+    status_msg = "#{minutes_text} ago"
+  end
+  status_msg
+end
+
+def main
+  Choice.options do
+    header ''
+    header 'Available options:'
+
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
+      end
+    end
+
+    option :threshold do
+      long '--threshold=MINUTES'
+      short '-t'
+      desc 'Print only the nodes with last check-in time greater than than this value'
+    end
+  end
+
+  db = CouchRest.database(CHEF_DB_URL)
+
+  db.documents['rows'].each do |doc|
+    if doc['id'] =~ /node_/
+      node = db.get(doc['id'])
+      next if  node.fqdn !~ /#{Choice.choices[:match]}/
+      last_check_in = DateTime.parse(Time.at(node.ohai_time).to_s)
+      hours, minutes, seconds, frac = DateTime.day_fraction_to_time(DateTime.now - last_check_in)
+      if Choice.choices[:threshold]
+        if ((hours * 60) + minutes) >= Choice.choices[:threshold].to_i
+          print "#{node.fqdn}: ".ljust(40)
+          puts last_check_in_time(last_check_in)
+        end
+      else
+        print "#{node.fqdn}: ".ljust(50)
+        puts last_check_in_time(last_check_in)
+      end
+    end
+  end
+
+end
+
+main

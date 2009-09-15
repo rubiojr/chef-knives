@@ -1,3 +1,7 @@
+=== 0.5 / 2009-15-09
+
+* added chef_node_last_checkin script
+
 === 0.4.1 / 2009-14-09
 
 * require chef gem >= 0.7
