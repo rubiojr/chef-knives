@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'couchrest'
+require 'chef'
+require 'choice'
+require 'pp'
+
+CHEF_DB_URL = 'http://localhost:5984/chef'
+
+def main
+  Choice.options do
+    banner 'Usage: chef_node_find_domu <domu_name>'
+    header ''
+    header 'Available options:'
+
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
+      end
+    end
+  end
+
+  db = CouchRest.database(CHEF_DB_URL)
+  domu_name = ARGV[0] || '.*'
+
+  db.documents['rows'].each do |doc|
+    if doc['id'] =~ /node_/
+      node = db.get(doc['id'])
+      next if  node.virtualization.nil? or node.virtualization[:role] != 'host'
+      if node.virtualization.guest_list.nil?
+        $stderr.puts "WARNING: virtualization.guest_list attr not found in #{node.fqdn}"
+      else
+        node.virtualization.guest_list.each do |l|
+          puts "#{node.fqdn}-> #{l}" if l =~ /#{domu_name}/
+        end
+      end
+    end
+  end
+end
+
+main

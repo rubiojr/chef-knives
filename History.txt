@@ -1,33 +1,37 @@
-=== 0.5 / 2009-15-09
+=== 0.6 / 2009-09-28
+
+* added chef_node_find_domu script
+
+=== 0.5 / 2009-09-15
 
 * added chef_node_last_checkin script
 
-=== 0.4.1 / 2009-14-09
+=== 0.4.1 / 2009-09-14
 
 * require chef gem >= 0.7
 
-=== 0.4 / 2009-14-09
+=== 0.4 / 2009-09-14
 
 * added chef_vlan_stats command
 
-=== 0.3.3 / 2009-11-09
+=== 0.3.3 / 2009-09-11
 
 * fixes in chef_node_find
 * added --no-ifaces flag to chef_node_find
 
-=== 0.3.2 / 2009-11-09
+=== 0.3.2 / 2009-09-11
 
 * fixes in chef_node_fs_usage
 
-=== 0.3.1 / 2009-11-09
+=== 0.3.1 / 2009-09-11
 
 * fixes in chef_node_fs_usage
 
-=== 0.3 / 2009-11-10
+=== 0.3 / 2009-09-11
 
 * chef_node_find script added
 
-=== 0.2 / 2009-10-09
+=== 0.2 / 2009-09-10
 
 * chef_node_stats script added
 
