@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'rest_client'
+require 'choice'
+require 'pp'
+require 'json/pure'
+
+CHEF_DB_URL = 'http://localhost:5984/chef'
+
+def main
+  Choice.options do
+    header ''
+    header 'Available options:'
+
+    option :help do
+      long '--help'
+      short '-h'
+      desc 'Show this message'
+      action do 
+        Choice.help
+        exit
+      end
+    end
+
+    option :name do 
+      default '.*'
+      long '--name=REGEXP'
+      short '-n'
+      desc 'Match only the nodes with an FQDN matching this value'
+    end
+    
+    option :revision do 
+      default 'true'
+      long '--revisions=[REV]'
+      short '-r'
+      desc 'Match only the nodes with an FQDN matching this value'
+    end
+
+    option :no_ifaces do 
+      long '--no-ifaces'
+      desc 'Do not print network interfaces'
+    end
+  end
+
+  output = RestClient.get('http://localhost:5984/chef/_all_docs') || []
+  nodes = JSON::Pure::Parser.new(output, :create_additions => false).parse['rows']
+  matches = []
+  nodes.each do |n|
+    matches << n if n['id'] =~ /node_.*#{Choice.choices[:name]}.*/
+  end
+
+  matches.each do |m|
+    json = RestClient.get "http://localhost:5984/chef/#{m['id']}?revs=#{Choice.choices[:revision]}"
+    node = JSON::Pure::Parser.new(json, :create_additions => false).parse
+    puts "----- NODE #{node['name']}"
+    if Choice.choices[:revision] == 'true'
+      revs = node['_revisions']['ids'].sort { |a,b| a.to_i <=> b.to_i }
+      revs.each do |r|
+        puts "#{node['_revisions']['start']}-#{r}"
+      end
+    else
+      pp node
+    end
+    puts
+  end
+
+end
+
+main
