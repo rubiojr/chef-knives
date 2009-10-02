@@ -30,8 +30,7 @@ def main
     end
     
     option :revision do 
-      default 'true'
-      long '--revisions=[REV]'
+      long '--revisions=REV'
       short '-r'
       desc 'Match only the nodes with an FQDN matching this value'
     end
@@ -44,26 +43,38 @@ def main
 
   output = RestClient.get('http://localhost:5984/chef/_all_docs') || []
   nodes = JSON::Pure::Parser.new(output, :create_additions => false).parse['rows']
-  matches = []
+  match = nil
   nodes.each do |n|
-    matches << n if n['id'] =~ /node_.*#{Choice.choices[:name]}.*/
+    match = n if n['id'] =~ /node_.*#{Choice.choices[:name]}.*/
   end
 
-  matches.each do |m|
-    json = RestClient.get "http://localhost:5984/chef/#{m['id']}?revs=#{Choice.choices[:revision]}"
-    node = JSON::Pure::Parser.new(json, :create_additions => false).parse
-    puts "----- NODE #{node['name']}"
-    if Choice.choices[:revision] == 'true'
-      revs = node['_revisions']['ids'].sort { |a,b| a.to_i <=> b.to_i }
-      revs.each do |r|
-        puts "#{node['_revisions']['start']}-#{r}"
-      end
-    else
+  json = RestClient.get "http://localhost:5984/chef/#{match['id']}?revs_info=true"
+  #{Choice.choices[:revision]}"
+  node = JSON::Pure::Parser.new(json, :create_additions => false).parse
+  puts "[ #{node['name']} ]"
+  if Choice.choices[:revision]
+    begin
+      node = parse_json "http://localhost:5984/chef/#{match['id']}?rev=#{Choice.choices[:revision]}"
       pp node
+    rescue RestClient::RequestFailed
+      $stderr.puts "Revision '#{Choice.choices[:revision]}' not found for node #{match['id']}"
     end
-    puts
+  else
+    puts "REVISION".ljust(30) + "DATE"
+    node['_revs_info'].each do |ri|
+      if ri['status'] == 'available'
+        print "#{ri['rev']}".ljust(20)
+        node = parse_json "http://localhost:5984/chef/#{match['id']}?rev=#{ri['rev']}"
+        puts "  #{Time.at(node['attributes']['ohai_time']).strftime('%Y%M%D-%H:%M:%S')}"
+      end
+    end
   end
 
+end
+
+def parse_json(url)
+  json = RestClient.get url
+  JSON::Pure::Parser.new(json, :create_additions => false).parse
 end
 
 main
