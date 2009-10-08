@@ -1,4 +1,8 @@
-=== 0.7 / 2009-09-28
+=== 0.7.1 / 2009-10-08
+
+* fixes in chef_node_revisions
+
+=== 0.7 / 2009-10-08
 
 * added chef_node_revisions script
 

@@ -65,7 +65,7 @@ def main
       if ri['status'] == 'available'
         print "#{ri['rev']}".ljust(20)
         node = parse_json "http://localhost:5984/chef/#{match['id']}?rev=#{ri['rev']}"
-        puts "  #{Time.at(node['attributes']['ohai_time']).strftime('%Y%M%D-%H:%M:%S')}"
+        puts "  #{Time.at(node['attributes']['ohai_time']).strftime('%Y/%m/%d-%H:%M:%S')}"
       end
     end
   end
