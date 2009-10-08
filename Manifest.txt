@@ -8,6 +8,7 @@ bin/chef_node_find_domu
 bin/chef_node_fs_usage
 bin/chef_node_last_checkin
 bin/chef_node_mem_usage
+bin/chef_node_revisions
 bin/chef_node_stats
 bin/chef_vlan_stats
 chef_knives.gemspec

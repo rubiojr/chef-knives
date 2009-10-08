@@ -1,5 +1,5 @@
 module Chef
   module Knives
-    VERSION = '0.6'
+    VERSION = '0.7'
   end
 end

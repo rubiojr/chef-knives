@@ -13,7 +13,9 @@ Hoe.new('chef_knives', Chef::Knives::VERSION) do |p|
   p.extra_deps << [ 'choice' ]
   p.extra_deps << [ 'chef', '>= 0.7' ]
   p.extra_deps << [ 'json' ]
+  p.extra_deps << [ 'json_pure' ]
   p.extra_deps << [ 'couchrest' ]
+  p.extra_deps << [ 'rest-client' ]
 end
 
 # vim: syntax=Ruby
